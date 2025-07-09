@@ -1097,6 +1097,33 @@ final class ConditionalReturnTypeTest extends TestCase
                 ],
                 'ignored_issues' => [],
             ],
+
+            //入れ子のint-mask
+            'nestedIntMask' => [
+                'code' => '<?php
+                    /**
+                     * @psalm-template P of string
+                     * @psalm-template F of int-mask<GLOB_NOCHECK,GLOB_MARK>
+                     * @psalm-param P $pattern
+                     * @psalm-param F $flags
+                     * @psalm-return (
+                     *       (F is int-mask<GLOB_MARK>
+                     *             ? int-range<0, 3>
+                     *         : int-range<0, 1>
+                     *         )
+                     * )
+                     */
+                    function glob_test(string $pattern, int $flags = 0)
+                    {
+                        return 1;
+                    }
+
+                    $result2 = glob_test("", GLOB_NOCHECK);',
+                'assertions' => [
+                    '$result2' => '\'GLOB_NOCHECK\''
+                ],
+                'ignored_issues' => [],
+            ],
         ];
     }
 }
