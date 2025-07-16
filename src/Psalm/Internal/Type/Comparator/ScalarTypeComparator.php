@@ -390,6 +390,15 @@ final class ScalarTypeComparator
                 return $container_type_part->isValidValue($input_type_part->value);
             }
 
+            if ($input_type_part instanceof TIntMaskVerifier) {
+                if ($atomic_comparison_result) {
+                    $atomic_comparison_result->type_coerced = true;
+                }
+                if ($input_type_part->mask === $container_type_part->mask) {
+                    return true;
+                }
+            }
+
             if ($input_type_part instanceof TInt) {
                 if ($atomic_comparison_result) {
                     $atomic_comparison_result->type_coerced = true;
