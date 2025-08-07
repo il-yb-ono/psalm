@@ -1468,18 +1468,22 @@ final class ArithmeticOpAnalyzer
         bool &$has_valid_right_operand,
         ?Union &$result_type = null,
     ): ?Union {
-        // Handle BitwiseOr operations between TIntMaskVerifier types
         if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseOr) {
             if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
-                // Combine potential_ints from both verifiers
-                $combined_ints = array_unique(array_merge(
-                    $left_type_part->potential_ints,
-                    $right_type_part->potential_ints
-                ));
-                
-                $new_verifier = new TIntMaskVerifier($combined_ints);
+
+                $left_potential_ints = $left_type_part->potential_ints;
+                $right_potential_ints = $right_type_part->potential_ints;
+                $calculated_masks = [];
+
+                foreach ($left_potential_ints as $left_int) {
+                    foreach ($right_potential_ints as $right_int) {
+                        $result_int = $left_int | $right_int;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+                }
+
                 $result_type = Type::combineUnionTypes(
-                    new Union([$new_verifier]),
+                    new Union($calculated_masks),
                     $result_type
                 );
                 
@@ -1490,92 +1494,268 @@ final class ArithmeticOpAnalyzer
             }
             
             if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TInt) {
-                // When combining with a regular int, create a new verifier that includes the int
-                $potential_ints = $left_type_part->potential_ints;
+                $left_potential_ints = $left_type_part->potential_ints;
+                $calculated_masks = [];
                 
                 if ($right_type_part instanceof TLiteralInt) {
-                    // For bitwise OR, always add the literal int to potential ints
-                    // as OR can combine any bits together
-                    $potential_ints[] = $right_type_part->value;
-                    $potential_ints = array_unique($potential_ints);
-                }
-                
-                $new_verifier = new TIntMaskVerifier($potential_ints);
-                $result_type = Type::combineUnionTypes(
-                    new Union([$new_verifier]),
-                    $result_type
-                );
-                
-                $has_valid_left_operand = true;
-                $has_valid_right_operand = true;
-                
-                return null;
-            }
-            
-            if ($left_type_part instanceof TInt && $right_type_part instanceof TIntMaskVerifier) {
-                // When combining with a regular int, create a new verifier that includes the int
-                $potential_ints = $right_type_part->potential_ints;
-                
-                if ($left_type_part instanceof TLiteralInt) {
-                    // For bitwise OR, always add the literal int to potential ints
-                    // as OR can combine any bits together
-                    $potential_ints[] = $left_type_part->value;
-                    $potential_ints = array_unique($potential_ints);
-                }
-                
-                $new_verifier = new TIntMaskVerifier($potential_ints);
-                $result_type = Type::combineUnionTypes(
-                    new Union([$new_verifier]),
-                    $result_type
-                );
-                
-                $has_valid_left_operand = true;
-                $has_valid_right_operand = true;
-                
-                return null;
-            }
-        }
-        
-        // Handle BitwiseAnd operations between TIntMaskVerifier types
-        if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseAnd) {
-            if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
-                // For AND operations, we need to find common bits
-                $common_mask = $left_type_part->mask & $right_type_part->mask;
-                
-                // Find all potential integers that could result from AND operation
-                $potential_ints = [];
-                foreach ($left_type_part->potential_ints as $left_int) {
-                    foreach ($right_type_part->potential_ints as $right_int) {
-                        $result_int = $left_int & $right_int;
-                        if (!in_array($result_int, $potential_ints)) {
-                            $potential_ints[] = $result_int;
-                        }
+                    // Calculate OR operation with the literal int
+                    foreach ($left_potential_ints as $left_int) {
+                        $result_int = $left_int | $right_type_part->value;
+                        $calculated_masks[] = new TLiteralInt($result_int);
                     }
-                }
-                
-                if (!empty($potential_ints)) {
+
+                    $result_type = Type::combineUnionTypes(
+                        new Union($calculated_masks),
+                        $result_type
+                    );
+                    $has_valid_left_operand = true;
+                    $has_valid_right_operand = true;
+                    return null;
+
+                } else {
+                    $potential_ints = $left_potential_ints;
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
                         $result_type
                     );
-                } else {
+
+                    return null;
+                }
+            }
+            
+            if ($left_type_part instanceof TInt && $right_type_part instanceof TIntMaskVerifier) {
+                $right_potential_ints = $right_type_part->potential_ints;
+                $calculated_masks = [];
+                
+                if ($left_type_part instanceof TLiteralInt) {
+                    // Calculate OR operation with the literal int
+                    foreach ($right_potential_ints as $right_int) {
+                        $result_int = $left_type_part->value | $right_int;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+
                     $result_type = Type::combineUnionTypes(
-                        Type::getInt(false, 0),
+                        new Union($calculated_masks),
                         $result_type
                     );
+                    
+                    $has_valid_left_operand = true;
+                    $has_valid_right_operand = true;
+                    
+                    return null;
+
+                } else {
+                    $potential_ints = $right_potential_ints;
+                    $new_verifier = new TIntMaskVerifier($potential_ints);
+                    $result_type = Type::combineUnionTypes(
+                        new Union([$new_verifier]),
+                        $result_type
+                    );
+                    
+                    return null;
                 }
+                
+
+            }
+        }
+        
+        if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseAnd) {
+            if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
+
+                $left_potential_ints = $left_type_part->potential_ints;
+                $right_potential_ints = $right_type_part->potential_ints;
+                $calculated_masks = [];
+
+                foreach ($left_potential_ints as $left_int) {
+                    foreach ($right_potential_ints as $right_int) {
+                        $result_int = $left_int & $right_int;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+                }
+                
+                $result_type = Type::combineUnionTypes(
+                    new Union($calculated_masks),
+                    $result_type
+                );
                 
                 $has_valid_left_operand = true;
                 $has_valid_right_operand = true;
                 
                 return null;
             }
+
+            if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TInt) {
+                $left_potential_ints = $left_type_part->potential_ints;
+                $calculated_masks = [];
+                
+                if ($right_type_part instanceof TLiteralInt) {
+                    // Calculate AND operation with the literal int
+                    foreach ($left_potential_ints as $left_int) {
+                        $result_int = $left_int & $right_type_part->value;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+
+                    $result_type = Type::combineUnionTypes(
+                        new Union($calculated_masks),
+                        $result_type
+                    );
+                    
+                    $has_valid_left_operand = true;
+                    $has_valid_right_operand = true;
+                    
+                    return null;
+
+                } else {
+                    $potential_ints = $left_potential_ints;
+                    $new_verifier = new TIntMaskVerifier($potential_ints);
+                    $result_type = Type::combineUnionTypes(
+                        new Union([$new_verifier]),
+                        $result_type
+                    );
+
+                    return null;
+                }
+            }
+            if ($left_type_part instanceof TInt && $right_type_part instanceof TIntMaskVerifier) {
+                $right_potential_ints = $right_type_part->potential_ints;
+                $calculated_masks = [];
+                
+                if ($left_type_part instanceof TLiteralInt) {
+                    // Calculate AND operation with the literal int
+                    foreach ($right_potential_ints as $right_int) {
+                        $result_int = $left_type_part->value & $right_int;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+
+                    $result_type = Type::combineUnionTypes(
+                        new Union($calculated_masks),
+                        $result_type
+                    );
+                    
+                    $has_valid_left_operand = true;
+                    $has_valid_right_operand = true;
+                    
+                    return null;
+
+                } else {
+                    $potential_ints = $right_potential_ints;
+                    $new_verifier = new TIntMaskVerifier($potential_ints);
+                    $result_type = Type::combineUnionTypes(
+                        new Union([$new_verifier]),
+                        $result_type
+                    );
+                    
+                    return null;
+                }
+            }
         }
+
+
+        if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseXor) {
+            if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
+
+                $left_potential_ints = $left_type_part->potential_ints;
+                $right_potential_ints = $right_type_part->potential_ints;
+                $calculated_masks = [];
+
+                foreach ($left_potential_ints as $left_int) {
+                    foreach ($right_potential_ints as $right_int) {
+                        $result_int = $left_int ^ $right_int;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+                }
+
+                $result_type = Type::combineUnionTypes(
+                    new Union($calculated_masks),
+                    $result_type
+                );
+                
+                $has_valid_left_operand = true;
+                $has_valid_right_operand = true;
+                
+                return null;
+            }
+
+            if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TInt) {
+                $left_potential_ints = $left_type_part->potential_ints;
+                $calculated_masks = [];
+                
+                if ($right_type_part instanceof TLiteralInt) {
+                    // Calculate XOR operation with the literal int
+                    foreach ($left_potential_ints as $left_int) {
+                        $result_int = $left_int ^ $right_type_part->value;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+
+                    $result_type = Type::combineUnionTypes(
+                        new Union($calculated_masks),
+                        $result_type
+                    );
+                    
+                    $has_valid_left_operand = true;
+                    $has_valid_right_operand = true;
+                    
+                    return null;
+
+                } else {
+                    // If right operand is not a literal, we can't calculate exact values
+                    // but we can still create a new TIntMaskVerifier
+                    $potential_ints = $left_potential_ints;
+                    $new_verifier = new TIntMaskVerifier($potential_ints);
+                    $result_type = Type::combineUnionTypes(
+                        new Union([$new_verifier]),
+                        $result_type
+                    );
+
+                    return null;
+                }
+            }
+            if ($left_type_part instanceof TInt && $right_type_part instanceof TIntMaskVerifier) {
+                // If left operand is a literal, we can calculate exact values
+                // but we can still create a new TIntMaskVerifier
+                $right_potential_ints = $right_type_part->potential_ints;
+                $calculated_masks = [];
+                if ($left_type_part instanceof TLiteralInt) {
+                    // Calculate XOR operation with the literal int
+                    foreach ($right_potential_ints as $right_int) {
+                        $result_int = $left_type_part->value ^ $right_int;
+                        $calculated_masks[] = new TLiteralInt($result_int);
+                    }
+
+                    $result_type = Type::combineUnionTypes(
+                        new Union($calculated_masks),
+                        $result_type
+                    );
+                    
+                    $has_valid_left_operand = true;
+                    $has_valid_right_operand = true;
+                    
+                    return null;
+
+                } else {
+                    // If left operand is not a literal, we can't calculate exact values
+                    // but we can still create a new TIntMaskVerifier
+                    $potential_ints = $right_potential_ints;
+                    $new_verifier = new TIntMaskVerifier($potential_ints);
+                    $result_type = Type::combineUnionTypes(
+                        new Union([$new_verifier]),
+                        $result_type
+                    );
+                    
+                    return null;
+                }
+            }
+        }
+
+
         
-        // For other operations, fall back to regular int handling
-        $has_valid_left_operand = true;
-        $has_valid_right_operand = true;
+
+
+
+        error_log('Unsupported TIntMaskVerifier operation: ' . get_class($parent));
+        
+        
         
         return null;
     }
