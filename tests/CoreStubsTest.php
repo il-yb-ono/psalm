@@ -312,11 +312,13 @@ final class CoreStubsTest extends TestCase
         yield 'glob return types' => [
             'code' => <<<'PHP'
                 <?php
-                $emptyPatternWithNocheckFlag1 = glob( ''  , GLOB_NOCHECK);
-                
+                /** @var int-mask<GLOB_ONLYDIR> */
+                $maybeOnlydirFlag = 0;
+
+                $emptyPatternWithNocheckFlagAndMaybeOnlydir = glob( '' , GLOB_NOCHECK | $maybeOnlydirFlag);
                 PHP,
             'assertions' => [
-                '$emptyPatternWithNocheckFlag1===' => 'false|list{\'\'}',
+                '$emptyPatternWithNocheckFlagAndMaybeOnlydir===' => 'false|list{0?: \'\'}',
             ],
         ];
         yield 'glob return ignores false' => [
