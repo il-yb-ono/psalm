@@ -433,7 +433,10 @@ final class TemplateInferredTypeReplacer
             $matching_else_types = [];
 
             $candidate_types_to_check = [];
-            foreach ($template_type->getAtomicTypes() as $candidate_atomic_type) {
+            $l = $template_type->getAtomicTypes();
+            $atomic_types = isset($l['mixed']) ? [$l['mixed']] : $l;
+            
+            foreach ($atomic_types as $candidate_atomic_type) {
                 if ($candidate_atomic_type instanceof TIntMaskVerifier) {
                     // Expand TIntMaskVerifier to all flag literal integer values
                     $potential_ints = $candidate_atomic_type->potential_ints;
@@ -446,9 +449,10 @@ final class TemplateInferredTypeReplacer
             }
 
             foreach ($candidate_types_to_check as $candidate_atomic_type) {
+                $candidate = new Union([$candidate_atomic_type]);
                 if (UnionTypeComparator::isContainedBy(
                     $codebase,
-                    new Union([$candidate_atomic_type]),
+                    $candidate,
                     $conditional_type,
                     false,
                     false,
@@ -461,7 +465,7 @@ final class TemplateInferredTypeReplacer
                 ) {
                     $matching_if_types[] = $candidate_atomic_type;
                 } elseif (null === Type::intersectUnionTypes(
-                    new Union([$candidate_atomic_type]),
+                    $candidate,
                     $conditional_type,
                     $codebase,
                     false,
