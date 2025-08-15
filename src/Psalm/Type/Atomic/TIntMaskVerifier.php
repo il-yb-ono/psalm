@@ -27,10 +27,8 @@ final class TIntMaskVerifier extends TInt
         parent::__construct($from_docblock);
 
         if (!in_array(0, $this->potential_ints)) {
-            $potential_ints[] = 0;
+            array_unshift($this->potential_ints, 0);
         }
-
-        sort($this->potential_ints, SORT_NUMERIC);
 
         $this->mask = 0;
         foreach ($this->potential_ints as $int) {
