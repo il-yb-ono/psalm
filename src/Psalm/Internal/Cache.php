@@ -58,8 +58,6 @@ final class Cache
     /** @var resource */
     private mixed $lock;
 
-    private readonly bool $arrayCache;
-
     public function __construct(
         Config $config,
         string $subdir,
@@ -67,7 +65,6 @@ final class Cache
         private readonly bool $persistent = true,
     ) {
         $this->serializer = $config->getCacheSerializer();
-        $this->arrayCache = $config->array_cache;
         if (!$persistent) {
             return;
         }
@@ -107,7 +104,7 @@ final class Cache
         flock($lock, LOCK_SH);
         $this->lock = $lock;
 
-        if (file_exists($this->dir.'consolidated') && $this->arrayCache) {
+        if (file_exists($this->dir.'consolidated')) {
             /** @var array<string, list{string, T}> */
             $this->cache = $this->serializer->unserialize(Providers::safeFileGetContents($this->dir.'consolidated'));
         }
@@ -229,9 +226,7 @@ final class Cache
 
         /** @var T */
         $content = $this->serializer->unserialize($content);
-        if ($this->arrayCache) {
-            $this->cache[$key] = [$hash, $content];
-        }
+        $this->cache[$key] = [$hash, $content];
         return $content;
     }
 

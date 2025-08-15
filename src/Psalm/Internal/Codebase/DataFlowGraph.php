@@ -9,6 +9,7 @@ use Psalm\Internal\DataFlow\Path;
 
 use function abs;
 use function array_keys;
+use function array_reverse;
 use function array_sum;
 use function count;
 use function str_starts_with;
@@ -71,8 +72,9 @@ abstract class DataFlowGraph
         ) {
             $fetch_nesting = 0;
 
-            for ($x = count($previous_path_types)-1; $x >= 0; $x--) {
-                $previous_path_type = $previous_path_types[$x];
+            $previous_path_types = array_reverse($previous_path_types);
+
+            foreach ($previous_path_types as $previous_path_type) {
                 if ($previous_path_type === $expression_type . '-assignment') {
                     if ($fetch_nesting === 0) {
                         return false;

@@ -30,17 +30,6 @@ final class KeyOfTemplateTest extends TestCase
                     }
                 ',
             ],
-            'mixedKeyOf' => [
-                'code' => '<?php
-                    /** @var array<int>|mixed */
-                    $a = [];
-
-                    /** @psalm-suppress MixedArgument */
-                    $a = array_keys($a);',
-                'assertions' => [
-                    '$a' => 'list<array-key>',
-                ],
-            ],
             'acceptsArrayKeyFirstFn' => [
                 'code' => '<?php
                     /**

@@ -78,22 +78,18 @@ final class TTemplateKeyOf extends Atomic
     }
 
     /**
-     * @return TArrayKey|static
+     * @return static
      */
     #[Override]
     public function replaceTemplateTypesWithArgTypes(
         TemplateResult $template_result,
         ?Codebase $codebase,
-    ): Atomic {
+    ): self {
         $as = TemplateInferredTypeReplacer::replace(
             $this->as,
             $template_result,
             $codebase,
         );
-        if ($as->hasMixed()) {
-            return new TArrayKey($as->from_docblock);
-        }
-
         if ($as === $this->as) {
             return $this;
         }
