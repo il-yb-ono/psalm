@@ -323,6 +323,7 @@ final class ArithmeticOpAnalyzer
                 $has_valid_left_operand,
                 $has_valid_right_operand,
                 $result_type,
+                $config->max_int_mask_combinations,
             );
         }
 
@@ -1461,6 +1462,7 @@ final class ArithmeticOpAnalyzer
         bool &$has_valid_left_operand,
         bool &$has_valid_right_operand,
         ?Union &$result_type = null,
+        int $max_int_mask_combinations = 10,
     ): ?Union {
         if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseOr) {
             if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
@@ -1483,11 +1485,10 @@ final class ArithmeticOpAnalyzer
                 if ($right_type_part instanceof TLiteralInt) {
                     $left_potential_ints = $left_type_part->potential_ints;
                     
-                    $max_combinations = 10;
                     $total_combinations = count($left_potential_ints);
                     $left_possible_ints = $left_type_part->getPossibleInts();
 
-                    if ($total_combinations <= $max_combinations) {
+                    if ($total_combinations <= $max_int_mask_combinations) {
                         $calculated_masks = [];
                         foreach ($left_possible_ints as $left_int) {
                             $result_int = $left_int | $right_type_part->value;
@@ -1530,11 +1531,10 @@ final class ArithmeticOpAnalyzer
                 if ($left_type_part instanceof TLiteralInt) {
                     $right_potential_ints = $right_type_part->potential_ints;
                     
-                    $max_combinations = 10;
                     $total_combinations = count($right_potential_ints);
                     $right_possible_ints = $right_type_part->getPossibleInts();
 
-                    if ($total_combinations <= $max_combinations) {
+                    if ($total_combinations <= $max_int_mask_combinations) {
                         $calculated_masks = [];
                         foreach ($right_possible_ints as $right_int) {
                             $result_int = $left_type_part->value | $right_int;
@@ -1596,10 +1596,9 @@ final class ArithmeticOpAnalyzer
                 if ($right_type_part instanceof TLiteralInt) {
                     $left_potential_ints = $left_type_part->potential_ints;
                     
-                    $max_combinations = 10;
                     $total_combinations = count($left_potential_ints);
                     
-                    if ($total_combinations <= $max_combinations) {
+                    if ($total_combinations <= $max_int_mask_combinations) {
                         $left_possible_ints = $left_type_part->getPossibleInts();
                         $calculated_masks = [];
                         foreach ($left_possible_ints as $left_int) {
@@ -1641,10 +1640,9 @@ final class ArithmeticOpAnalyzer
                 if ($left_type_part instanceof TLiteralInt) {
                     $right_potential_ints = $right_type_part->potential_ints;
                     
-                    $max_combinations = 10;
                     $total_combinations = count($right_potential_ints);
                     
-                    if ($total_combinations <= $max_combinations) {
+                    if ($total_combinations <= $max_int_mask_combinations) {
                         $right_possible_ints = $right_type_part->getPossibleInts();
                         $calculated_masks = [];
                         foreach ($right_possible_ints as $right_int) {
@@ -1707,10 +1705,9 @@ final class ArithmeticOpAnalyzer
                 if ($right_type_part instanceof TLiteralInt) {
                     $left_potential_ints = $left_type_part->potential_ints;
 
-                    $max_combinations = 10;
                     $total_combinations = count($left_potential_ints);
 
-                    if ($total_combinations <= $max_combinations) {
+                    if ($total_combinations <= $max_int_mask_combinations) {
                         $left_possible_ints = $left_type_part->getPossibleInts();
                         $calculated_masks = [];
                         foreach ($left_possible_ints as $left_int) {
@@ -1751,10 +1748,9 @@ final class ArithmeticOpAnalyzer
                 if ($left_type_part instanceof TLiteralInt) {
                     $right_potential_ints = $right_type_part->potential_ints;
 
-                    $max_combinations = 10;
                     $total_combinations = count($right_potential_ints);
 
-                    if ($total_combinations <= $max_combinations) {
+                    if ($total_combinations <= $max_int_mask_combinations) {
                         $right_possible_ints = $right_type_part->getPossibleInts();
                         $calculated_masks = [];
                         foreach ($right_possible_ints as $right_int) {
