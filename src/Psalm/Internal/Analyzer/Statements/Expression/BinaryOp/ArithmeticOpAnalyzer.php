@@ -53,7 +53,6 @@ use function array_merge;
 use function array_unique;
 use function array_values;
 use function count;
-use function in_array;
 use function is_int;
 use function is_numeric;
 use function max;
@@ -202,11 +201,6 @@ final class ArithmeticOpAnalyzer
 
             foreach ($left_type->getAtomicTypes() as $left_type_part) {
                 foreach ($right_type->getAtomicTypes() as $right_type_part) {
-
-                    // if($parent instanceof BitwiseOr) {
-                    //     error_log('NodeDataProvider::getType called with unsupported node type: ' . get_class($parent));
-                    // }
-
                     $candidate_result_type = self::analyzeOperands(
                         $statements_source,
                         $codebase,
@@ -328,7 +322,7 @@ final class ArithmeticOpAnalyzer
                 $right_type_part,
                 $has_valid_left_operand,
                 $has_valid_right_operand,
-                $result_type
+                $result_type,
             );
         }
 
@@ -1470,7 +1464,6 @@ final class ArithmeticOpAnalyzer
     ): ?Union {
         if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseOr) {
             if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
-
                 $left_potential_ints = $left_type_part->potential_ints;
                 $right_potential_ints = $right_type_part->potential_ints;
                 $potential_ints = array_merge($left_potential_ints, $right_potential_ints);
@@ -1478,7 +1471,7 @@ final class ArithmeticOpAnalyzer
 
                 $result_type = Type::combineUnionTypes(
                     new Union([new TIntMaskVerifier($potential_ints)]),
-                    $result_type
+                    $result_type,
                 );
                 
                 $has_valid_left_operand = true;
@@ -1504,7 +1497,7 @@ final class ArithmeticOpAnalyzer
                         if ($calculated_masks) {
                             $result_type = Type::combineUnionTypes(
                                 new Union($calculated_masks),
-                                $result_type
+                                $result_type,
                             );
                         }
                     } else {
@@ -1514,20 +1507,19 @@ final class ArithmeticOpAnalyzer
                         $new_verifier = new TIntMaskVerifier($new_potential_ints);
                         $result_type = Type::combineUnionTypes(
                             new Union([$new_verifier]),
-                            $result_type
+                            $result_type,
                         );
                     }
                     
                     $has_valid_left_operand = true;
                     $has_valid_right_operand = true;
                     return null;
-
                 } else {
                     $potential_ints = $left_type_part->potential_ints;
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
-                        $result_type
+                        $result_type,
                     );
 
                     return null;
@@ -1552,7 +1544,7 @@ final class ArithmeticOpAnalyzer
                         if ($calculated_masks) {
                             $result_type = Type::combineUnionTypes(
                                 new Union($calculated_masks),
-                                $result_type
+                                $result_type,
                             );
                         }
                     } else {
@@ -1562,7 +1554,7 @@ final class ArithmeticOpAnalyzer
                         $new_verifier = new TIntMaskVerifier($new_potential_ints);
                         $result_type = Type::combineUnionTypes(
                             new Union([$new_verifier]),
-                            $result_type
+                            $result_type,
                         );
                     }
                     
@@ -1570,13 +1562,12 @@ final class ArithmeticOpAnalyzer
                     $has_valid_right_operand = true;
                     
                     return null;
-
                 } else {
                     $potential_ints = $right_type_part->potential_ints;
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
-                        $result_type
+                        $result_type,
                     );
 
                     return null;
@@ -1586,14 +1577,13 @@ final class ArithmeticOpAnalyzer
         
         if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseAnd) {
             if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
-
                 $left_potential_ints = $left_type_part->potential_ints;
                 $right_potential_ints = $right_type_part->potential_ints;
                 $potential_ints = array_merge($left_potential_ints, $right_potential_ints);
                 $potential_ints = array_unique($potential_ints);
                 $result_type = Type::combineUnionTypes(
                     new Union([new TIntMaskVerifier($potential_ints)]),
-                    $result_type
+                    $result_type,
                 );
 
                 $has_valid_left_operand = true;
@@ -1619,7 +1609,7 @@ final class ArithmeticOpAnalyzer
                         if ($calculated_masks) {
                             $result_type = Type::combineUnionTypes(
                                 new Union($calculated_masks),
-                                $result_type
+                                $result_type,
                             );
                         }
                     } else {
@@ -1629,20 +1619,19 @@ final class ArithmeticOpAnalyzer
                         $new_verifier = new TIntMaskVerifier($new_potential_ints);
                         $result_type = Type::combineUnionTypes(
                             new Union([$new_verifier]),
-                            $result_type
+                            $result_type,
                         );
                     }
                     
                     $has_valid_left_operand = true;
                     $has_valid_right_operand = true;
                     return null;
-
                 } else {
                     $potential_ints = $left_type_part->potential_ints;
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
-                        $result_type
+                        $result_type,
                     );
 
                     return null;
@@ -1656,7 +1645,6 @@ final class ArithmeticOpAnalyzer
                     $total_combinations = count($right_potential_ints);
                     
                     if ($total_combinations <= $max_combinations) {
-                        
                         $right_possible_ints = $right_type_part->getPossibleInts();
                         $calculated_masks = [];
                         foreach ($right_possible_ints as $right_int) {
@@ -1666,7 +1654,7 @@ final class ArithmeticOpAnalyzer
                         if ($calculated_masks) {
                             $result_type = Type::combineUnionTypes(
                                 new Union($calculated_masks),
-                                $result_type
+                                $result_type,
                             );
                         }
                     } else {
@@ -1676,7 +1664,7 @@ final class ArithmeticOpAnalyzer
                         $new_verifier = new TIntMaskVerifier($new_potential_ints);
                         $result_type = Type::combineUnionTypes(
                             new Union([$new_verifier]),
-                            $result_type
+                            $result_type,
                         );
                     }
                     
@@ -1684,13 +1672,12 @@ final class ArithmeticOpAnalyzer
                     $has_valid_right_operand = true;
                     
                     return null;
-
                 } else {
                     $potential_ints = $right_type_part->potential_ints;
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
-                        $result_type
+                        $result_type,
                     );
                     
                     return null;
@@ -1701,14 +1688,13 @@ final class ArithmeticOpAnalyzer
 
         if ($parent instanceof PhpParser\Node\Expr\BinaryOp\BitwiseXor) {
             if ($left_type_part instanceof TIntMaskVerifier && $right_type_part instanceof TIntMaskVerifier) {
-
                 $left_potential_ints = $left_type_part->potential_ints;
                 $right_potential_ints = $right_type_part->potential_ints;
                 $potential_ints = array_merge($left_potential_ints, $right_potential_ints);
                 $potential_ints = array_unique($potential_ints);
                 $result_type = Type::combineUnionTypes(
                     new Union([new TIntMaskVerifier($potential_ints)]),
-                    $result_type
+                    $result_type,
                 );
                 
                 $has_valid_left_operand = true;
@@ -1734,7 +1720,7 @@ final class ArithmeticOpAnalyzer
                         if ($calculated_masks) {
                             $result_type = Type::combineUnionTypes(
                                 new Union($calculated_masks),
-                                $result_type
+                                $result_type,
                             );
                         }
                     } else {
@@ -1744,7 +1730,7 @@ final class ArithmeticOpAnalyzer
                         $new_verifier = new TIntMaskVerifier($new_potential_ints);
                         $result_type = Type::combineUnionTypes(
                             new Union([$new_verifier]),
-                            $result_type
+                            $result_type,
                         );
                     }
 
@@ -1756,7 +1742,7 @@ final class ArithmeticOpAnalyzer
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
-                        $result_type
+                        $result_type,
                     );
                     return null;
                 }
@@ -1778,7 +1764,7 @@ final class ArithmeticOpAnalyzer
                         if ($calculated_masks) {
                             $result_type = Type::combineUnionTypes(
                                 new Union($calculated_masks),
-                                $result_type
+                                $result_type,
                             );
                         }
                     } else {
@@ -1788,7 +1774,7 @@ final class ArithmeticOpAnalyzer
                         $new_verifier = new TIntMaskVerifier($new_potential_ints);
                         $result_type = Type::combineUnionTypes(
                             new Union([$new_verifier]),
-                            $result_type
+                            $result_type,
                         );
                     }
 
@@ -1800,11 +1786,11 @@ final class ArithmeticOpAnalyzer
                     $new_verifier = new TIntMaskVerifier($potential_ints);
                     $result_type = Type::combineUnionTypes(
                         new Union([$new_verifier]),
-                        $result_type
+                        $result_type,
                     );
                 }
             }
-        }        
+        }
         return null;
     }
 }
