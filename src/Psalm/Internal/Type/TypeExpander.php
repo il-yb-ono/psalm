@@ -22,6 +22,7 @@ use Psalm\Type\Atomic\TGenericObject;
 use Psalm\Type\Atomic\TInt;
 use Psalm\Type\Atomic\TIntMask;
 use Psalm\Type\Atomic\TIntMaskOf;
+use Psalm\Type\Atomic\TIntMaskVerifier;
 use Psalm\Type\Atomic\TIterable;
 use Psalm\Type\Atomic\TKeyOf;
 use Psalm\Type\Atomic\TKeyedArray;
@@ -374,7 +375,7 @@ final class TypeExpander
                 $potential_ints[] = $new_value_type->value;
             }
 
-            return TypeParser::getComputedIntsFromMask($potential_ints);
+            return [new TIntMaskVerifier($potential_ints)];
         }
 
         if ($return_type instanceof TIntMaskOf) {
@@ -408,7 +409,7 @@ final class TypeExpander
                 $potential_ints[] = $new_value_type->value;
             }
 
-            return TypeParser::getComputedIntsFromMask($potential_ints);
+            return [new TIntMaskVerifier($potential_ints)];
         }
 
         if ($return_type instanceof TConditional) {
@@ -498,7 +499,7 @@ final class TypeExpander
                 unset($property_type);
             }
             if ($changed) {
-                $return_type = new TKeyedArray(
+                $return_type = TKeyedArray::make(
                     $properties,
                     $return_type->class_strings,
                     $fallback_params,
@@ -988,7 +989,7 @@ final class TypeExpander
         if ($properties === []) {
             return [$return_type];
         }
-        return [new TKeyedArray(
+        return [TKeyedArray::make(
             $properties,
             null,
             $all_sealed ? null : [Type::getString(), Type::getMixed()],

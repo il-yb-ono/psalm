@@ -33,7 +33,6 @@ use Psalm\Type\Atomic;
 use Psalm\Type\Atomic\TArray;
 use Psalm\Type\Atomic\TArrayKey;
 use Psalm\Type\Atomic\TCallable;
-use Psalm\Type\Atomic\TCallableKeyedArray;
 use Psalm\Type\Atomic\TCallableObject;
 use Psalm\Type\Atomic\TClassConstant;
 use Psalm\Type\Atomic\TClassString;
@@ -44,6 +43,7 @@ use Psalm\Type\Atomic\TGenericObject;
 use Psalm\Type\Atomic\TInt;
 use Psalm\Type\Atomic\TIntMask;
 use Psalm\Type\Atomic\TIntMaskOf;
+use Psalm\Type\Atomic\TIntMaskVerifier;
 use Psalm\Type\Atomic\TIntRange;
 use Psalm\Type\Atomic\TIterable;
 use Psalm\Type\Atomic\TKeyOf;
@@ -76,11 +76,9 @@ use Psalm\Type\Union;
 use function array_key_exists;
 use function array_key_first;
 use function array_keys;
-use function array_map;
 use function array_merge;
 use function array_pop;
 use function array_shift;
-use function array_unique;
 use function array_unshift;
 use function array_values;
 use function assert;
@@ -535,37 +533,6 @@ final class TypeParser
         throw new LogicException('Should never get here');
     }
 
-    /**
-     * @param  non-empty-list<int>  $potential_ints
-     * @return  non-empty-list<TLiteralInt>
-     */
-    public static function getComputedIntsFromMask(array $potential_ints, bool $from_docblock = false): array
-    {
-        /** @var list<int> */
-        $potential_values = [];
-
-        foreach ($potential_ints as $ith) {
-            $new_values = [];
-
-            $new_values[] = $ith;
-
-            if ($ith !== 0) {
-                foreach ($potential_values as $potential_value) {
-                    $new_values[] = $ith | $potential_value;
-                }
-            }
-
-            $potential_values = [...$new_values, ...$potential_values];
-        }
-
-        array_unshift($potential_values, 0);
-        $potential_values = array_unique($potential_values);
-
-        return array_map(
-            static fn($int): TLiteralInt => new TLiteralInt($int, $from_docblock),
-            array_values($potential_values),
-        );
-    }
 
     /**
      * @param  array<string, array<string, Union>> $template_type_map
@@ -982,7 +949,7 @@ final class TypeParser
                 $potential_ints[] = $atomic_type->value;
             }
 
-            return new Union(self::getComputedIntsFromMask($potential_ints, $from_docblock));
+            return new TIntMaskVerifier($potential_ints, $from_docblock);
         }
 
         if ($generic_type_value === 'int-mask-of') {
@@ -1397,7 +1364,7 @@ final class TypeParser
         array $template_type_map,
         array $type_aliases,
         bool $from_docblock,
-    ): TCallableKeyedArray|TKeyedArray|TObjectWithProperties|TArray {
+    ): TKeyedArray|TObjectWithProperties|TArray {
         $properties = [];
         $class_strings = [];
 
@@ -1525,9 +1492,7 @@ final class TypeParser
         }
 
         $callable = str_starts_with($type, 'callable-');
-        $class = TKeyedArray::class;
         if ($callable) {
-            $class = TCallableKeyedArray::class;
             $type = substr($type, 9);
         }
 
@@ -1571,16 +1536,23 @@ final class TypeParser
             }
             $extra_params = $final_extra_params;
         }
-        return new $class(
-            $properties,
-            $class_strings,
-            $extra_params ?? ($sealed
-                ? null
-                : [$is_list ? Type::getListKey() : Type::getArrayKey(), Type::getMixed()]
-            ),
-            $is_list,
-            $from_docblock,
-        );
+        return $callable
+            ? TKeyedArray::makeCallable(
+                $properties,
+                $class_strings,
+                $is_list,
+                $from_docblock,
+            ) : TKeyedArray::make(
+                $properties,
+                $class_strings,
+                $extra_params ?? ($sealed
+                    ? null
+                    : [$is_list ? Type::getListKey() : Type::getArrayKey(), Type::getMixed()]
+                ),
+                $is_list,
+                $from_docblock,
+            )
+        ;
     }
 
     /**
@@ -1612,7 +1584,7 @@ final class TypeParser
 
         foreach ($normalized_intersection_types as $intersection_type) {
             if ($intersection_type instanceof TKeyedArray
-                && !$intersection_type instanceof TCallableKeyedArray
+                && !$intersection_type->is_callable
             ) {
                 $any_array_found = true;
 
@@ -1787,7 +1759,7 @@ final class TypeParser
             $fallback_params = [Type::getArrayKey(), Type::getMixed()];
         }
 
-        return new TKeyedArray(
+        return TKeyedArray::make(
             $properties,
             null,
             $fallback_params,

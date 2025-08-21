@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  psalm-xdebug:
+    build:
+      context: .
+      dockerfile: ./bin/docker/Dockerfile
+      args:
+        PSALM_REV: dev-master
+    image: psalm-xdebug:latest
+    container_name: psalm-xdebug
+    volumes:
+      - .:/app
+      - ./docker/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini:ro
+    environment:
+      - XDEBUG_MODE=debug,develop
+      - XDEBUG_CONFIG=client_host=host.docker.internal client_port=9003
+      - PHP_IDE_CONFIG=serverName=psalm-docker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    working_dir: /app
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y build-essential autoconf &&
+        pecl install xdebug &&
+        docker-php-ext-enable xdebug &&
+        php -m | grep xdebug &&
+        tail -f /dev/null
+      "
+    stdin_open: true
+    tty: true

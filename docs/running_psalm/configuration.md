@@ -33,6 +33,12 @@ Configuration file may be split into several files using [XInclude](https://www.
 </projectFiles>
 ```
 
+## Different configuration file
+
+You can also create a different configuration file, then run Psalm with:
+```bash
+vendor/bin/psalm --config=other-psalm-config.xml
+```
 
 ## Optional &lt;psalm /&gt; attributes
 
@@ -381,7 +387,7 @@ When `true`, Psalm will treat all classes as if they had sealed properties, mean
 >
 ```
 
-When `true`, Psalm will run [Taint Analysis](../security_analysis/index.md) on your codebase. This config is the same as if you were running Psalm with `--taint-analysis`.
+When `true` (the default), Psalm will run [Taint Analysis](../security_analysis/index.md) on your codebase. This config is the same as if you were running Psalm with `--taint-analysis`.
 
 #### reportInfo
 
@@ -530,6 +536,17 @@ This setting controls the maximum size of shaped arrays that will be transformed
 Arrays bigger than this value (100 by default) will be transformed in a generic `non-empty-array` type, instead.
 
 Please note that changing this setting might introduce unwanted side effects and those side effects won't be considered as bugs.
+
+#### maxIntMaskCombinations
+```xml
+<psalm
+  maxIntMaskCombinations="10"
+>
+```
+
+This setting controls the maximum number of integer mask combinations that Psalm will process when analyzing bitwise operations with `TIntMaskVerifier` types. When the number of potential combinations exceeds this limit, Psalm will fall back to using a more generic type to avoid performance issues.
+
+The default value is 10. Increasing this value may provide more precise type analysis for complex bitwise operations but could negatively impact performance.
 
 #### longScanWarning
 ```xml

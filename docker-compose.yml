@@ -1,0 +1,22 @@
+services:
+  psalm:
+    # 'image' の代わりに 'build' を使用してカスタムDockerfileを指定
+    build:
+      context: .
+      dockerfile: bin/docker/Dockerfile
+      args:
+        # 元のcomposeファイルとPHPバージョンを合わせる
+        PHP_VERSION: ${PHP_VERSION:-8.2}
+    # ビルドしたイメージに分かりやすい名前を付ける（任意）
+    image: psalm-dev-xdebug:latest
+    environment:
+      # Xdebug 3 の設定
+      # 'debug' に加えて 'develop' を有効にするとvar_dumpの表示がリッチになります
+      XDEBUG_MODE: "debug,develop"
+      XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+    volumes:
+      # ホストのプロジェクトディレクトリをコンテナの/appにマウント
+      - .:/app
+    working_dir: /app
+    # コンテナを起動状態に保つ
+    command: tail -f /dev/null
