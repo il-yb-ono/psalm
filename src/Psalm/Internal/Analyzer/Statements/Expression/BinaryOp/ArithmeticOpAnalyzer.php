@@ -1501,10 +1501,12 @@ final class ArithmeticOpAnalyzer
                             $calculated_masks[] = new TLiteralInt($result_int);
                         }
 
-                        $result_type = Type::combineUnionTypes(
-                            new Union($calculated_masks),
-                            $result_type
-                        );
+                        if ($calculated_masks) {
+                            $result_type = Type::combineUnionTypes(
+                                new Union($calculated_masks),
+                                $result_type
+                            );
+                        }
                     } else {
                         $new_potential_ints = $left_potential_ints;
                         $new_potential_ints[] = $right_type_part->value;
@@ -1547,10 +1549,12 @@ final class ArithmeticOpAnalyzer
                             $calculated_masks[] = new TLiteralInt($result_int);
                         }
 
-                        $result_type = Type::combineUnionTypes(
-                            new Union($calculated_masks),
-                            $result_type
-                        );
+                        if ($calculated_masks) {
+                            $result_type = Type::combineUnionTypes(
+                                new Union($calculated_masks),
+                                $result_type
+                            );
+                        }
                     } else {
                         $new_potential_ints = $right_potential_ints;
                         $new_potential_ints[] = $left_type_part->value;
@@ -1612,10 +1616,12 @@ final class ArithmeticOpAnalyzer
                             $result_int = $left_int & $right_type_part->value;
                             $calculated_masks[] = new TLiteralInt($result_int);
                         }
-                        $result_type = Type::combineUnionTypes(
-                            new Union($calculated_masks),
-                            $result_type
-                        );
+                        if ($calculated_masks) {
+                            $result_type = Type::combineUnionTypes(
+                                new Union($calculated_masks),
+                                $result_type
+                            );
+                        }
                     } else {
                         $new_potential_ints = $left_potential_ints;
                         $new_potential_ints[] = $right_type_part->value;
@@ -1657,10 +1663,12 @@ final class ArithmeticOpAnalyzer
                             $result_int = $left_type_part->value & $right_int;
                             $calculated_masks[] = new TLiteralInt($result_int);
                         }
-                        $result_type = Type::combineUnionTypes(
-                            new Union($calculated_masks),
-                            $result_type
-                        );
+                        if ($calculated_masks) {
+                            $result_type = Type::combineUnionTypes(
+                                new Union($calculated_masks),
+                                $result_type
+                            );
+                        }
                     } else {
                         $new_potential_ints = $right_potential_ints;
                         $new_potential_ints[] = $left_type_part->value;
@@ -1723,10 +1731,12 @@ final class ArithmeticOpAnalyzer
                             $result_int = $left_int ^ $right_type_part->value;
                             $calculated_masks[] = new TLiteralInt($result_int);
                         }
-                        $result_type = Type::combineUnionTypes(
-                            new Union($calculated_masks),
-                            $result_type
-                        );
+                        if ($calculated_masks) {
+                            $result_type = Type::combineUnionTypes(
+                                new Union($calculated_masks),
+                                $result_type
+                            );
+                        }
                     } else {
                         $new_potential_ints = $left_potential_ints;
                         $new_potential_ints[] = $right_type_part->value;
@@ -1765,10 +1775,12 @@ final class ArithmeticOpAnalyzer
                             $result_int = $left_type_part->value ^ $right_int;
                             $calculated_masks[] = new TLiteralInt($result_int);
                         }
-                        $result_type = Type::combineUnionTypes(
-                            new Union($calculated_masks),
-                            $result_type
-                        );
+                        if ($calculated_masks) {
+                            $result_type = Type::combineUnionTypes(
+                                new Union($calculated_masks),
+                                $result_type
+                            );
+                        }
                     } else {
                         $new_potential_ints = $right_potential_ints;
                         $new_potential_ints[] = $left_type_part->value;
